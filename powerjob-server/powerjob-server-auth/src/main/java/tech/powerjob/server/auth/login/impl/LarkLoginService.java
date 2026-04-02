@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import tech.powerjob.server.auth.login.LoginTypeInfo;
 import tech.powerjob.server.auth.login.ThirdPartyLoginRequest;
@@ -28,38 +29,39 @@ import java.nio.charset.StandardCharsets;
  * @author zaki.chen
  * @since 2026/04/02
  */
+@ConditionalOnProperty(name = "oms.auth.lark.enable", havingValue = "true")
 @Service
 public class LarkLoginService implements ThirdPartyLoginService {
 
-    @Value("${oms.auth.lark.appId:#{null}}")
+    @Value("${oms.auth.lark.app-id:#{null}}")
     private String larkAppId;
 
-    @Value("${oms.auth.lark.appSecret:#{null}}")
+    @Value("${oms.auth.lark.app-secret:#{null}}")
     private String larkAppSecret;
 
-    @Value("${oms.auth.lark.callbackUrl:#{null}}")
+    @Value("${oms.auth.lark.callback-url:#{null}}")
     private String larkCallbackUrl;
 
     @Override
     public LoginTypeInfo loginType() {
         return new LoginTypeInfo()
-                .setType("FEISHU")
-                .setName("飞书登录");
+                .setType("LARK")
+                .setName("LarkLogin");
     }
 
     @Override
     @SneakyThrows
     public String generateLoginUrl(HttpServletRequest httpServletRequest) {
         if (StringUtils.isAnyEmpty(larkAppId, larkAppSecret, larkCallbackUrl)) {
-            throw new IllegalArgumentException("please config 'oms.auth.lark.appId', 'oms.auth.lark.appSecret' and 'oms.auth.lark.callbackUrl' in properties!");
+            throw new IllegalArgumentException("please config 'oms.auth.lark.app-id', 'oms.auth.lark.app-secret' and 'oms.auth.lark.callback-url' in properties!");
         }
 
         String urlString = URLEncoder.encode(larkCallbackUrl, StandardCharsets.UTF_8.name());
         String url = "https://open.feishu.cn/open-apis/authen/v1/authorize?" +
                 "app_id=" + larkAppId +
                 "&redirect_uri=" + urlString +
-                "&state=FEISHU";
-        Loggers.WEB.info("[FeishuLoginService] login url: {}", url);
+                "&state=LARK";
+        Loggers.WEB.info("[LarkLoginService] login url: {}", url);
         return url;
     }
 
@@ -84,7 +86,7 @@ public class LarkLoginService implements ThirdPartyLoginService {
 
             return bizUser;
         } catch (Exception e) {
-            Loggers.WEB.error("[FeishuLoginService] login failed!", e);
+            Loggers.WEB.error("[LarkLoginService] login failed!", e);
             throw e;
         }
     }
